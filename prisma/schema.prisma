@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  Author
+  Admin
+  Retail
+}
+
+model Users {
+  userId          String            @id @unique @default(cuid())
+  userType        UserType
+  name            String
+  email           String            @unique
+  password        String
+  PurchaseHistory PurchaseHistory[]
+}
+
+model Books {
+  bookId          String            @id @unique @default(cuid())
+  authors         Json
+  sellCount       Int               @default(0)
+  title           String            @unique
+  description     String?
+  price           Int               @default(100)
+  PurchaseHistory PurchaseHistory[]
+}
+
+model PurchaseHistory {
+  purchaseId   String   @id @unique @default(cuid())
+  id           String
+  bookId       String
+  userId       String
+  purchaseDate DateTime @default(now())
+  price        Int
+  quantity     Int      @default(1)
+  Books        Books    @relation(fields: [bookId], references: [bookId])
+  Users        Users    @relation(fields: [userId], references: [userId])
+
+  @@unique([purchaseId, bookId, userId])
+}
