@@ -11,40 +11,98 @@ datasource db {
 }
 
 enum UserType {
-  Author
   Admin
   Retail
 }
 
 model Users {
-  userId          String            @id @unique @default(cuid())
-  userType        UserType
+  id              String            @id @default(uuid())
+  userType        UserType          @default(Retail)
   name            String
   email           String            @unique
-  password        String
+  password        String            @default("$2a$12$iMwZodMdt4UCrPTFeH8TIenUYB/uR3YX4QfqGOWUZGAhTWNp.vlju")
   PurchaseHistory PurchaseHistory[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  Books           Books?            @relation(fields: [booksId], references: [id])
+  booksId         String?
+  UserTokens      UserTokens[]
+
+  @@unique([id])
+  @@index([id])
+}
+
+model UserTokens {
+  id           String   @id @default(uuid())
+  userId       String
+  User         Users    @relation(fields: [userId], references: [id])
+  accessToken  String
+  refreshToken String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([id])
+  @@index([id])
+}
+
+model Author {
+  id         String       @id @default(uuid())
+  name       String
+  descrption String?
+  email      String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  booksId    String?
+  BookAuthor BookAuthor[]
+
+  @@unique([id])
+  @@index([id])
 }
 
 model Books {
-  bookId          String            @id @unique @default(cuid())
-  authors         Json
-  sellCount       Int               @default(0)
-  title           String            @unique
+  id              String            @id @default(uuid())
+  title           String
   description     String?
   price           Int               @default(100)
+  totalQuantity   Int               @default(0)
+  availableCount  Int               @default(0)
+  sellCount       Int               @default(0)
   PurchaseHistory PurchaseHistory[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  Users           Users[]
+  BookAuthor      BookAuthor[]
+
+  @@unique([id, title])
+}
+
+model BookAuthor {
+  bookId    String
+  authorId  String
+  active    Boolean  @default(true)
+  Author    Author   @relation(fields: [authorId], references: [id])
+  Books     Books    @relation(fields: [bookId], references: [id])
+  createdOn DateTime @default(now())
+
+  @@id([bookId, authorId])
 }
 
 model PurchaseHistory {
-  purchaseId   String   @id @unique @default(cuid())
-  id           String
+  id           String   @id @default(uuid())
+  invoice      String
+  purchaseId   String
   bookId       String
   userId       String
   purchaseDate DateTime @default(now())
   price        Int
   quantity     Int      @default(1)
-  Books        Books    @relation(fields: [bookId], references: [bookId])
-  Users        Users    @relation(fields: [userId], references: [userId])
+  active       Boolean  @default(true)
+  Books        Books    @relation(fields: [bookId], references: [id])
+  Users        Users    @relation(fields: [userId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  @@unique([purchaseId, bookId, userId])
+  @@unique([id])
+  @@index([id, purchaseId])
 }
